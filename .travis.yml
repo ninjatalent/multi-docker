@@ -1,0 +1,23 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t ninjatalent/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run ninjatalent/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t ninjatalent/multi-client ./client
+  - docker build -t ninjatalent/multi-nginx ./nginx
+  - docker build -t ninjatalent/multi-server ./server
+  - docker build -t ninjatalent/multi-worker ./worker
+
+  # log into docker cli
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # take those image and push them to docker hub
+  - docker push ninjatalent/multi-client
+  - docker push ninjatalent/multi-nginx
+  - docker push ninjatalent/multi-server
+  - docker push ninjatalent/multi-worker
