@@ -1,0 +1,45 @@
+version: '3'    # version number
+services:    # first elements of services are the names
+  postgres:    # name of service
+    image: 'postgres:latest' # Image from dockerhub, latest will just grab the newest image
+  redis:    # name of service for when we run docker
+    image: 'redis:latest'     # Image from dockerhub, latest will just grab the newest image
+  nginx:    # service name is nginx
+    restart: always # I always want to restart nginx if the container goes down
+    build: # build information
+      dockerfile: Dockerfile.dev # name of the dockerfile
+      context: ./nginx/ # where the docker file is located
+    ports:
+      - '3050:80'
+  api:    # name of service for when we run docker
+    build:    # for building
+      dockerfile: Dockerfile.dev    # this is the name of the docker file to build
+      context: ./server    # this is where you should look to find the docker file
+    volumes:    # for volumes
+      - /app/node_modules # don't try to override this
+      - ./server:/app # anytime we make a change to ./server it is going to move it into the /app directory except stuff in node modules because we said leave it alone
+    environment: # variable=value is set by us at run time - just variableName is value from computer
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PGUSER=postgres
+      - PGHOST=postgres
+      - PGDATABASE=postgres
+      - PGPASSWORD=postgres_password
+      - PGPORT=5432
+  client: # Will name this service to client
+    build: # This is specifiying that I want to build this image
+      dockerfile: Dockerfile.dev # the name of the docker file
+      context: ./client # the location of dockerfile in reference to this compose file
+    volumes:
+      - /app/node_modules # do not override node_modules in container with stuff from client
+      - ./client:/app # everything in host client directory move to container directory app immediately
+  worker: # Will name this service to client
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    build: # This is specifiying that I want to build this image
+      dockerfile: Dockerfile.dev # the name of the docker file
+      context: ./worker # the location of dockerfile in reference to this compose file
+    volumes:
+      - /app/node_modules # do not override node_modules in container with stuff from client
+      - ./worker:/app # everything in host client directory move to container directory app immediately
